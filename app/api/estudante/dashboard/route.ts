@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
+import { getPatenteActual } from "@/lib/patentes";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { StatusBeneficioEstudante } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
 export async function GET() {
@@ -39,14 +41,30 @@ export async function GET() {
 
     const impactoReal = saldoContribuido.mul(multiplicador);
 
-    // Buscar benefícios disponíveis
-    const beneficiosDisponiveis = await prisma.beneficio.findMany({
-      where: { ativo: true },
-      select: { id: true },
-    });
+    let beneficiosDisponiveis = 0;
+    let progressoPatente: Awaited<ReturnType<typeof getPatenteActual>> | null =
+      null;
 
-    // Progresso para bolsa (placeholder)
-    const progressoBolsa = 68;
+    try {
+      [beneficiosDisponiveis, progressoPatente] = await Promise.all([
+        prisma.beneficioEstudante.count({
+          where: {
+            estudanteId: session.user.id,
+            status: StatusBeneficioEstudante.DISPONIVEL,
+          },
+        }),
+        getPatenteActual(session.user.id),
+      ]);
+    } catch (progressionError) {
+      console.error(
+        "Falha ao carregar progresso de patentes/benefícios no dashboard",
+        progressionError,
+      );
+    }
+
+    const progressoBolsa = progressoPatente
+      ? Math.round(progressoPatente.progressoPercentagem)
+      : 0;
 
     // Ações rápidas
     const accoesRapidas = [
@@ -83,7 +101,29 @@ export async function GET() {
         status: c.status,
         referencia: c.referencia,
       })),
-      beneficiosDisponiveis: beneficiosDisponiveis.length,
+      beneficiosDisponiveis,
+      patenteActual: progressoPatente
+        ? {
+            id: progressoPatente.patenteActual.id,
+            nome: progressoPatente.patenteActual.nome,
+            descricao: progressoPatente.patenteActual.descricao,
+            cor: progressoPatente.patenteActual.cor,
+            icone: progressoPatente.patenteActual.icone,
+            ordem: progressoPatente.patenteActual.ordem,
+          }
+        : null,
+      proximaPatente: progressoPatente?.proximaPatente
+        ? {
+            id: progressoPatente.proximaPatente.id,
+            nome: progressoPatente.proximaPatente.nome,
+            descricao: progressoPatente.proximaPatente.descricao,
+            cor: progressoPatente.proximaPatente.cor,
+            icone: progressoPatente.proximaPatente.icone,
+            ordem: progressoPatente.proximaPatente.ordem,
+            limiarKz: progressoPatente.proximaPatente.limiarKz,
+          }
+        : null,
+      kzParaProximaPatente: progressoPatente?.kzParaProxima ?? 0,
       accoesRapidas,
     });
   } catch (error) {

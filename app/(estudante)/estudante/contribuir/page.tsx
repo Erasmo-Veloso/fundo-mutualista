@@ -18,26 +18,26 @@ import {
 
 const PRESET_AMOUNTS = [500, 1000, 2000];
 const FREQUENCIES = [
-  { value: "UNICA", label: "One-time", hint: "Single impact payment", icon: Circle },
-  { value: "MENSAL", label: "Monthly", hint: "Sustained support", icon: Repeat },
+  { value: "UNICA", label: "Única", hint: "Pagamento pontual", icon: Circle },
+  { value: "MENSAL", label: "Mensal", hint: "Apoio contínuo", icon: Repeat },
 ] as const;
 const PAYMENT_METHODS = [
   {
     value: "MULTICAIXA_EXPRESS",
-    label: "Express checkout",
-    hint: "Pay with your phone",
+    label: "Multicaixa Express",
+    hint: "Pague com o seu telemóvel",
     icon: Wallet,
   },
   {
     value: "CARTAO",
-    label: "Credit or debit card",
+    label: "Cartão de crédito ou débito",
     hint: "Visa, Mastercard, Amex",
     icon: CreditCard,
   },
   {
     value: "TRANSFERENCIA",
-    label: "Bank transfer",
-    hint: "Direct from your account",
+    label: "Transferência bancária",
+    hint: "Diretamente da sua conta",
     icon: Landmark,
   },
 ] as const;
@@ -56,7 +56,7 @@ interface SuccessData {
 const CONFETTI_COLORS = ["#0F6E56", "#EF9F27", "#7F77DD", "#22C55E", "#F97316"];
 
 function formatCurrency(value: number, decimals = true) {
-  return value.toLocaleString("en-US", {
+  return value.toLocaleString("pt-AO", {
     minimumFractionDigits: decimals ? 2 : 0,
     maximumFractionDigits: decimals ? 2 : 0,
   });
@@ -95,7 +95,7 @@ export default function ContribuirPage() {
     event.preventDefault();
 
     if (!contributionAmount) {
-      setError("Please enter a valid amount.");
+      setError("Por favor, introduza um valor válido.");
       return;
     }
 
@@ -117,7 +117,7 @@ export default function ContribuirPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Error processing contribution.");
+        setError(data.message || "Erro ao processar a contribuição.");
         return;
       }
 
@@ -130,7 +130,7 @@ export default function ContribuirPage() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unknown error while processing contribution.",
+          : "Erro desconhecido ao processar a contribuição.",
       );
     } finally {
       setLoading(false);
@@ -140,7 +140,7 @@ export default function ContribuirPage() {
   if (success && successData) {
     return (
       <StudentLayout pageTitle="Contribuir">
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 px-4 py-10 sm:px-8">
+        <div className="relative bg-gray-50 px-4 py-4 sm:px-8">
           <div className="pointer-events-none absolute inset-0">
             {confettiPieces.map((piece) => (
               <span
@@ -163,50 +163,47 @@ export default function ContribuirPage() {
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary-50">
               <Sparkles className="h-9 w-9 text-primary-600" />
             </div>
-            <h2 className="mt-6 text-3xl font-semibold leading-tight text-gray-800">
-              Contribuição concluída
-              Tudo pronto! Vamos começar
+            <h2 className="mt-6 text-xl font-semibold leading-tight text-gray-800">
+              Contribuição concluída com sucesso!
             </h2>
             <p className="mx-auto mt-3 max-w-xs text-sm text-gray-600">
-              A tua contribuição foi registada. Aqui estão os detalhes desta operação.
+              A tua contribuição foi registada. Aqui estão os detalhes desta
+              operação.
             </p>
             <div className="mt-6 space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-4 text-left text-sm">
-            <div className="mt-6 space-y-2 rounded-xl bg-gray-50 p-4 text-left text-sm">
               <p className="flex items-center justify-between text-gray-600">
                 <span>Valor</span>
                 <strong className="text-gray-800">
-                  ${formatCurrency(Number(successData.valor))}
-                </strong>
-              </p>
-              <p className="flex items-center justify-between text-gray-600">
-                <span>Impacto real</span>
-                <strong className="text-gray-800">
-                  ${formatCurrency(Number(successData.impactoReal))}
+                  {formatCurrency(Number(successData.valor))} Kz
                 </strong>
               </p>
               <p className="flex items-center justify-between text-gray-600">
                 <span>Referência</span>
-                <strong className="text-gray-800">{successData.referencia}</strong>
+                <strong className="text-gray-800">
+                  {successData.referencia}
+                </strong>
               </p>
               <p className="flex items-center justify-between text-gray-600">
                 <span>Status</span>
-                <strong className="text-emerald-700">{successData.status}</strong>
+                <strong className="text-emerald-700">
+                  {successData.status}
+                </strong>
               </p>
             </div>
 
-            <Link
-              href="/estudante"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-800"
-            >
-              Ir para o meu Dashboard →
-            </Link>
-
             <button
+              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-800"
               onClick={() => setSuccess(false)}
-              className="mt-3 text-sm font-semibold text-gray-500 transition hover:text-gray-700"
             >
               Fazer outra contribuição
             </button>
+
+            <Link
+              href={"/estudante/historico"}
+              className="mt-3 text-sm font-semibold text-gray-500 transition hover:text-gray-700"
+            >
+              Ver histórico →
+            </Link>
           </div>
 
           <style jsx>{`
@@ -252,14 +249,20 @@ export default function ContribuirPage() {
             Nova contribuição
           </h1>
           <p className="text-sm text-gray-500">
-            Your contribution directly empowers students. Choose your impact level below.
+            A sua contribuição apoia diretamente os estudantes. Escolha abaixo o
+            nível do seu impacto.
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-6 xl:grid-cols-[1.55fr_1fr]"
+        >
           <div className="space-y-4">
             <section className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="text-2xl font-medium text-gray-700">Select amount</h2>
+              <h2 className="text-2xl font-medium text-gray-700">
+                Selecionar valor
+              </h2>
 
               <div className="mt-4 grid grid-cols-3 gap-2.5">
                 {PRESET_AMOUNTS.map((preset) => {
@@ -275,28 +278,32 @@ export default function ContribuirPage() {
                           : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
                       }`}
                     >
-                      ${formatCurrency(preset, false)}
+                      {formatCurrency(preset, false)} Kz
                     </button>
                   );
                 })}
               </div>
 
               <div className="mt-4 space-y-2">
-                <p className="text-xs font-medium text-gray-400">Or enter custom amount</p>
+                <p className="text-xs font-medium text-gray-400">
+                  Ou introduza um valor personalizado
+                </p>
                 <input
                   type="number"
                   min="1"
                   step="0.01"
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
-                  placeholder="$ 0.00"
+                  placeholder="Kz 0,00"
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-primary-600 focus:bg-white"
                 />
               </div>
             </section>
 
             <section className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="text-2xl font-medium text-gray-700">Contribution frequency</h2>
+              <h2 className="text-2xl font-medium text-gray-700">
+                Frequência da contribuição
+              </h2>
 
               <div className="mt-4 grid grid-cols-2 gap-2.5">
                 {FREQUENCIES.map((item) => {
@@ -324,9 +331,13 @@ export default function ContribuirPage() {
                         >
                           <Icon className="h-3 w-3" />
                         </span>
-                        <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {item.label}
+                        </span>
                       </div>
-                      <p className="mt-1 pl-7 text-xs text-gray-400">{item.hint}</p>
+                      <p className="mt-1 pl-7 text-xs text-gray-400">
+                        {item.hint}
+                      </p>
                     </button>
                   );
                 })}
@@ -334,7 +345,9 @@ export default function ContribuirPage() {
             </section>
 
             <section className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="text-2xl font-medium text-gray-700">Payment method</h2>
+              <h2 className="text-2xl font-medium text-gray-700">
+                Método de pagamento
+              </h2>
 
               <div className="mt-4 space-y-2.5">
                 {PAYMENT_METHODS.map((payment) => {
@@ -355,14 +368,20 @@ export default function ContribuirPage() {
                       <div className="flex items-center gap-3">
                         <span
                           className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                            selected ? "bg-primary-100 text-primary-600" : "bg-white text-gray-400"
+                            selected
+                              ? "bg-primary-100 text-primary-600"
+                              : "bg-white text-gray-400"
                           }`}
                         >
                           <Icon className="h-4 w-4" />
                         </span>
                         <div className="text-left">
-                          <p className="text-sm font-semibold text-gray-700">{payment.label}</p>
-                          <p className="text-xs text-gray-400">{payment.hint}</p>
+                          <p className="text-sm font-semibold text-gray-700">
+                            {payment.label}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {payment.hint}
+                          </p>
                         </div>
                       </div>
 
@@ -413,25 +432,29 @@ export default function ContribuirPage() {
             </section> */}
 
             <section className="rounded-xl border border-gray-200 bg-white p-5">
-              <h3 className="text-sm font-semibold text-gray-500">Summary</h3>
+              <h3 className="text-sm font-semibold text-gray-500">Resumo</h3>
 
               <div className="mt-4 space-y-2 border-b border-gray-100 pb-4 text-sm">
                 <div className="flex items-center justify-between text-gray-500">
-                  <span>Contribution</span>
+                  <span>Contribuição</span>
                   <span className="font-medium text-gray-700">
-                    ${formatCurrency(contributionAmount)}
+                    {formatCurrency(contributionAmount)} Kz
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-gray-500">
-                  <span>Processing fee (optional)</span>
-                  <span className="font-medium text-gray-700">${formatCurrency(processingFee)}</span>
+                  <span>Taxa de processamento (opcional)</span>
+                  <span className="font-medium text-gray-700">
+                    {formatCurrency(processingFee)} Kz
+                  </span>
                 </div>
               </div>
 
               <div className="mt-4 flex items-end justify-between">
-                <p className="text-sm font-semibold text-gray-600">Total due today</p>
+                <p className="text-sm font-semibold text-gray-600">
+                  Total a pagar hoje
+                </p>
                 <p className="text-4xl font-semibold tracking-tight text-gray-700">
-                  ${formatCurrency(contributionAmount + processingFee)}
+                  {formatCurrency(contributionAmount + processingFee)} Kz
                 </p>
               </div>
 
@@ -440,12 +463,12 @@ export default function ContribuirPage() {
                 disabled={!canSubmit}
                 className="mt-5 w-full rounded-lg bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Processing..." : "Complete contribution →"}
+                {loading ? "A processar..." : "Concluir contribuição →"}
               </button>
 
               <p className="mt-3 inline-flex w-full items-center justify-center gap-1.5 text-[11px] font-medium text-gray-400">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Secure, encrypted payment processing
+                Processamento de pagamento seguro e encriptado
               </p>
             </section>
           </aside>

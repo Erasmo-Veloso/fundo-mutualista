@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { verificarProgressaoPatente } from "@/lib/patentes";
 import { prisma } from "@/lib/prisma";
 import { TipoContribuicao } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
@@ -46,10 +47,9 @@ export async function POST(request: Request) {
       create: { id: 1 },
     });
 
-    const multiplicador =
-      fundo.totalContribuicoes.gt(0)
-        ? fundo.totalCofinanciamento.div(fundo.totalContribuicoes)
-        : new Decimal(1);
+    const multiplicador = fundo.totalContribuicoes.gt(0)
+      ? fundo.totalCofinanciamento.div(fundo.totalContribuicoes)
+      : new Decimal(1);
 
     const statusContribuicao = simularPagamento ? "CONFIRMADO" : "PENDENTE";
 
@@ -66,8 +66,12 @@ export async function POST(request: Request) {
       },
     });
 
+    let progressaoPatente: Awaited<
+      ReturnType<typeof verificarProgressaoPatente>
+    > | null = null;
+
     if (simularPagamento) {
-      await prisma.fundo.update({
+      const fundoActualizado = await prisma.fundo.update({
         where: { id: fundo.id },
         data: {
           totalContribuicoes: { increment: valor },
@@ -75,6 +79,25 @@ export async function POST(request: Request) {
           saldoDisponivel: { increment: valor },
         },
       });
+
+      const contribuicoesConfirmadas = await prisma.contribuicao.aggregate({
+        where: {
+          estudanteId: session.user.id,
+          status: "CONFIRMADO",
+        },
+        _sum: {
+          valor: true,
+        },
+      });
+
+      const novaContribuicaoTotal = Number(
+        contribuicoesConfirmadas._sum.valor ?? 0,
+      );
+
+      progressaoPatente = await verificarProgressaoPatente(
+        session.user.id,
+        novaContribuicaoTotal,
+      );
     }
 
     // Calcular impacto real
@@ -89,10 +112,16 @@ export async function POST(request: Request) {
         impactoReal: impactoReal.toString(),
         referencia: contribuicao.referencia,
         status: contribuicao.status,
-        message:
-          simularPagamento
-            ? "Contribuição simulada com sucesso."
-            : "Contribuição criada com sucesso. Aguarde confirmação de pagamento.",
+        progressaoPatente: progressaoPatente
+          ? {
+              novaPatente: progressaoPatente.novaPatente,
+              beneficiosDesbloqueados:
+                progressaoPatente.beneficiosDesbloqueados,
+            }
+          : null,
+        message: simularPagamento
+          ? "Contribuição simulada com sucesso."
+          : "Contribuição criada com sucesso. Aguarde confirmação de pagamento.",
       },
       { status: 201 },
     );
