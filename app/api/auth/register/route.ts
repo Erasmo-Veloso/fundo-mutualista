@@ -10,12 +10,24 @@ import { prisma } from "@/lib/prisma";
 
 const registerSchema = z.object({
   nome: z.string().min(2),
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(6),
+  universidade: z.string().trim().min(2).optional().or(z.literal("")),
+  curso: z.string().trim().min(2).optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        {
+          message:
+            "Configuração incompleta: defina DATABASE_URL no ambiente para criar contas.",
+        },
+        { status: 500 },
+      );
+    }
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 
@@ -35,7 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nome, email, password } = parsed.data;
+    const { nome, email, password, universidade, curso } = parsed.data;
 
     const existingUser = await prisma.utilizador.findUnique({
       where: { email },
@@ -56,6 +68,8 @@ export async function POST(request: Request) {
         nome,
         email,
         passwordHash,
+        universidade: universidade || null,
+        curso: curso || null,
         papel: Papel.ESTUDANTE,
         status: StatusUtilizador.PENDENTE,
       },
@@ -91,7 +105,25 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(user, { status: 201 });
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message.toLowerCase() : String(error);
+
+    if (
+      message.includes("can't reach database server") ||
+      message.includes("can't connect") ||
+      message.includes("connection")
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Base de dados indisponível no momento. Verifique a ligação DATABASE_URL e tente novamente.",
+        },
+        { status: 503 },
+      );
+    }
+
+    console.error("Erro no registo de utilizador", error);
     return NextResponse.json(
       { message: "Erro interno ao criar conta." },
       { status: 500 },

@@ -23,39 +23,46 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        const parsed = credentialsSchema.safeParse(credentials);
+        try {
+          const parsed = credentialsSchema.safeParse(credentials);
 
-        if (!parsed.success) {
+          if (!parsed.success) {
+            return null;
+          }
+
+          const normalizedEmail = parsed.data.email.trim().toLowerCase();
+
+          const user = await prisma.utilizador.findUnique({
+            where: { email: normalizedEmail },
+          });
+
+          if (!user || !user.passwordHash) {
+            return null;
+          }
+
+          const isValidPassword = await bcrypt.compare(
+            parsed.data.password,
+            user.passwordHash,
+          );
+
+          if (!isValidPassword) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            nome: user.nome,
+            email: user.email,
+            papel: user.papel,
+            status: user.status,
+            avatarUrl: user.avatarUrl,
+            name: user.nome,
+            image: user.avatarUrl,
+          };
+        } catch (error) {
+          console.error("Falha na autenticação por credenciais", error);
           return null;
         }
-
-        const user = await prisma.utilizador.findUnique({
-          where: { email: parsed.data.email },
-        });
-
-        if (!user || !user.passwordHash) {
-          return null;
-        }
-
-        const isValidPassword = await bcrypt.compare(
-          parsed.data.password,
-          user.passwordHash,
-        );
-
-        if (!isValidPassword) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          nome: user.nome,
-          email: user.email,
-          papel: user.papel,
-          status: user.status,
-          avatarUrl: user.avatarUrl,
-          name: user.nome,
-          image: user.avatarUrl,
-        };
       },
     }),
   ],
