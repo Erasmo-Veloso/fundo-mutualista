@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Papel {
+  ESTUDANTE
+  PARCEIRO
+  ADMIN
+}
+
+enum StatusUtilizador {
+  ACTIVO
+  TEMPORARIO
+  SUSPENSO
+  PENDENTE
+}
+
+enum TipoParceiro {
+  EMPRESA
+  ONG
+  UNIVERSIDADE
+  DOADOR_PRIVADO
+}
+
+enum NivelParceiro {
+  BRONZE
+  PRATA
+  OURO
+  PLATINA
+}
+
+enum StatusParceiro {
+  ACTIVO
+  INACTIVO
+  SUSPENSO
+  PENDENTE
+}
+
+enum TipoContribuicao {
+  ESTUDANTE
+  PARCEIRO
+}
+
+enum StatusContribuicao {
+  CONFIRMADO
+  PENDENTE
+  FALHADO
+}
+
+enum TipoBeneficio {
+  BOLSA
+  DESCONTO
+  CURSO
+  MENTORIA
+  PRIORIDADE
+}
+
+enum StatusBeneficioEstudante {
+  ACTIVO
+  PENDENTE
+  EXPIRADO
+}
+
+enum StatusSolicitacaoApoio {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  INFO_SOLICITADA
+}
+
+enum EventoMatching {
+  CONTRIBUICAO
+  BOLSA
+  EMERGENCIA
+}
+
+enum TipoBolsa {
+  INTEGRAL
+  PARCIAL
+}
+
+enum StatusBolsa {
+  ACTIVA
+  ENCERRADA
+  SUSPENSA
+}
+
+enum StatusCandidaturaBolsa {
+  SUBMETIDA
+  EM_ANALISE
+  ENTREVISTA
+  APROVADA
+  REJEITADA
+}
+
+enum StatusApoioEmergencial {
+  PENDENTE
+  APROVADO
+  PARCIAL
+  REJEITADO
+}
+
+enum AudienciaComunicado {
+  TODOS
+  ESTUDANTES
+  PARCEIROS
+}
+
+model Utilizador {
+  id                String                    @id @default(cuid())
+  nome              String
+  email             String                    @unique
+  passwordHash      String
+  papel             Papel
+  universidade      String?
+  curso             String?
+  status            StatusUtilizador          @default(PENDENTE)
+  avatarUrl         String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  parceiroPerfil    Parceiro?
+  contribuicoes     Contribuicao[]            @relation("ContribuicaoEstudante")
+  beneficios        BeneficioEstudante[]
+  solicitacoes      SolicitacaoApoioEspecial[] @relation("SolicitacaoEstudante")
+  notificacoes      Notificacao[]
+  candidaturasBolsa CandidaturaBolsa[]        @relation("CandidaturaEstudante")
+  candidaturasAdmin CandidaturaBolsa[]        @relation("CandidaturaAdmin")
+  apoiosEmergenciais ApoioEmergencial[]       @relation("ApoioEstudante")
+  apoiosAdmin       ApoioEmergencial[]        @relation("ApoioAdmin")
+  solicitacoesAdmin SolicitacaoApoioEspecial[] @relation("SolicitacaoAdmin")
+  certificacoes     Certificacao[]            @relation("CertificacaoEstudante")
+  comunicados       Comunicado[]
+}
+
+model Parceiro {
+  id             String          @id @default(cuid())
+  utilizadorId   String          @unique
+  tipo           TipoParceiro
+  nif            String?         @unique
+  website        String?
+  sector         String?
+  nivel          NivelParceiro   @default(BRONZE)
+  aporteTotal    Decimal         @default(0) @db.Decimal(14, 2)
+  status         StatusParceiro  @default(PENDENTE)
+  createdAt      DateTime        @default(now())
+  utilizador     Utilizador      @relation(fields: [utilizadorId], references: [id], onDelete: Cascade)
+  contribuicoes  Contribuicao[]  @relation("ContribuicaoParceiro")
+  matchingRules  MatchingRule[]
+  beneficios     Beneficio[]
+  certificacoes  Certificacao[]  @relation("CertificacaoParceiro")
+}
+
+model Contribuicao {
+  id              String             @id @default(cuid())
+  valor           Decimal            @db.Decimal(14, 2)
+  data            DateTime           @default(now())
+  tipo            TipoContribuicao
+  estudanteId     String?
+  parceiroId      String?
+  status          StatusContribuicao @default(PENDENTE)
+  metodoPagamento String?
+  referencia      String?
+  recibo          String?
+  fundoId         Int                @default(1)
+  estudante       Utilizador?        @relation("ContribuicaoEstudante", fields: [estudanteId], references: [id], onDelete: SetNull)
+  parceiro        Parceiro?          @relation("ContribuicaoParceiro", fields: [parceiroId], references: [id], onDelete: SetNull)
+  fundo           Fundo              @relation(fields: [fundoId], references: [id], onDelete: Restrict)
+
+  @@index([estudanteId])
+  @@index([parceiroId])
+  @@index([data])
+}
+
+model Fundo {
+  id                    Int           @id @default(1)
+  totalContribuicoes    Decimal       @default(0) @db.Decimal(16, 2)
+  totalCofinanciamento  Decimal       @default(0) @db.Decimal(16, 2)
+  saldoDisponivel       Decimal       @default(0) @db.Decimal(16, 2)
+  updatedAt             DateTime      @updatedAt
+  contribuicoes         Contribuicao[]
+}
+
+model Beneficio {
+  id                  String               @id @default(cuid())
+  tipo                TipoBeneficio
+  descricao           String
+  requisitos          String?
+  valor               Decimal?             @db.Decimal(14, 2)
+  parceiroId          String?
+  ativo               Boolean              @default(true)
+  parceiro            Parceiro?            @relation(fields: [parceiroId], references: [id], onDelete: SetNull)
+  beneficioEstudantes BeneficioEstudante[]
+}
+
+model BeneficioEstudante {
+  id             String                    @id @default(cuid())
+  estudanteId    String
+  beneficioId    String
+  status         StatusBeneficioEstudante  @default(PENDENTE)
+  dataAtribuicao DateTime                  @default(now())
+  dataExpiracao  DateTime?
+  estudante      Utilizador                @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  beneficio      Beneficio                 @relation(fields: [beneficioId], references: [id], onDelete: Cascade)
+
+  @@unique([estudanteId, beneficioId])
+  @@index([status])
+}
+
+model SolicitacaoApoioEspecial {
+  id          String                  @id @default(cuid())
+  estudanteId String
+  motivo      String
+  documentos  String[]
+  status      StatusSolicitacaoApoio @default(PENDENTE)
+  adminId     String?
+  resolvidoEm DateTime?
+  observacoes String?
+  estudante   Utilizador              @relation("SolicitacaoEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  admin       Utilizador?             @relation("SolicitacaoAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([estudanteId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model MatchingRule {
+  id            String        @id @default(cuid())
+  parceiroId    String
+  evento        EventoMatching
+  multiplicador Int           @default(1)
+  capMensal     Decimal?      @db.Decimal(14, 2)
+  ativo         Boolean       @default(true)
+  parceiro      Parceiro      @relation(fields: [parceiroId], references: [id], onDelete: Cascade)
+
+  @@index([parceiroId])
+}
+
+model Bolsa {
+  id              String             @id @default(cuid())
+  nome            String
+  tipo            TipoBolsa
+  valor           Decimal            @db.Decimal(14, 2)
+  prazo           DateTime
+  requisitos      String?
+  vagasTotal      Int
+  vagasDisponiveis Int
+  status          StatusBolsa        @default(ACTIVA)
+  candidaturas    CandidaturaBolsa[]
+}
+
+model CandidaturaBolsa {
+  id             String                 @id @default(cuid())
+  estudanteId    String
+  bolsaId        String
+  cartaMotivacao String
+  documentos     String[]
+  media          Decimal?               @db.Decimal(4, 2)
+  status         StatusCandidaturaBolsa @default(SUBMETIDA)
+  adminId        String?
+  createdAt      DateTime               @default(now())
+  estudante      Utilizador             @relation("CandidaturaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  bolsa          Bolsa                  @relation(fields: [bolsaId], references: [id], onDelete: Cascade)
+  admin          Utilizador?            @relation("CandidaturaAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([estudanteId])
+  @@index([bolsaId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model ApoioEmergencial {
+  id              String                  @id @default(cuid())
+  estudanteId     String
+  tipo            String
+  valorSolicitado Decimal                 @db.Decimal(14, 2)
+  valorAprovado   Decimal?                @db.Decimal(14, 2)
+  justificacao    String
+  documentos      String[]
+  status          StatusApoioEmergencial  @default(PENDENTE)
+  adminId         String
+  resolvidoEm     DateTime?
+  estudante       Utilizador              @relation("ApoioEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  admin           Utilizador              @relation("ApoioAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([estudanteId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model Certificacao {
+  id          String      @id @default(cuid())
+  estudanteId String?
+  parceiroId  String?
+  tipo        String
+  url         String
+  emitidoEm   DateTime
+  estudante   Utilizador? @relation("CertificacaoEstudante", fields: [estudanteId], references: [id], onDelete: SetNull)
+  parceiro    Parceiro?   @relation("CertificacaoParceiro", fields: [parceiroId], references: [id], onDelete: SetNull)
+
+  @@index([estudanteId])
+  @@index([parceiroId])
+}
+
+model Notificacao {
+  id          String     @id @default(cuid())
+  utilizadorId String
+  titulo      String
+  mensagem    String
+  tipo        String
+  lida        Boolean    @default(false)
+  url         String?
+  createdAt   DateTime   @default(now())
+  utilizador  Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Cascade)
+
+  @@index([utilizadorId])
+  @@index([lida])
+}
+
+model Comunicado {
+  id        String             @id @default(cuid())
+  titulo    String
+  conteudo  String
+  autorId   String
+  audiencia AudienciaComunicado
+  fixado    Boolean            @default(false)
+  createdAt DateTime           @default(now())
+  autor     Utilizador         @relation(fields: [autorId], references: [id], onDelete: Restrict)
+
+  @@index([autorId])
+  @@index([audiencia])
+}
