@@ -2,9 +2,15 @@ import { auth } from "@/lib/auth";
 import { EstudantesTable } from "@/components/admin/EstudantesTable";
 import { prisma } from "@/lib/prisma";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { redirect } from "next/navigation";
 
 export default async function AdminPage() {
   const session = await auth();
+
+  // Proteger rota
+  if (!session || session.user.papel !== "ADMIN") {
+    redirect("/login");
+  }
 
   // Buscar estatísticas
   const totalEstudantes = await prisma.utilizador.count({

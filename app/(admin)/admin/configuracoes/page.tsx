@@ -1,6 +1,15 @@
 import AdminLayout from "@/components/admin/AdminLayout";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function ConfiguracoesPage() {
+export default async function ConfiguracoesPage() {
+  const session = await auth();
+
+  // Proteger rota
+  if (!session || session.user.papel !== "ADMIN") {
+    redirect("/login");
+  }
+
   return (
     <AdminLayout pageTitle="Configurações">
       <div className="bg-white rounded-lg shadow border border-[#d5d8db] p-6">

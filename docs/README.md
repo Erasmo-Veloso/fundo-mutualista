@@ -10,7 +10,9 @@ Bem-vindo à documentação do **Fundo Mutualista**, uma plataforma de gestão d
 4. **[API-ENDPOINTS.md](./API-ENDPOINTS.md)** - Documentação de todos os endpoints da API
 5. **[BANCO-DADOS.md](./BANCO-DADOS.md)** - Estrutura do banco de dados
 6. **[AUTENTICACAO.md](./AUTENTICACAO.md)** - Sistema de autenticação e autorização
-7. **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Resolução de problemas comuns
+7. **[DEPLOY.md](./DEPLOY.md)** - Guia passo-a-passo de deployment para produção
+8. **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Resolução de problemas comuns
+9. **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** - Referência rápida e cheat sheet
 
 ## 🎯 Visão Geral Rápida
 
