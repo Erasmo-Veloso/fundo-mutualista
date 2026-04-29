@@ -29,10 +29,10 @@ const NAV_ITEMS = [
   { label: "Cursos", icon: BookOpen, href: "/estudante/cursos" },
   { label: "Mentoria", icon: Users, href: "/estudante/mentoria" },
   { label: "Impacto", icon: Zap, href: "/estudante/impacto" }, */
-  { label: "Apoio Emergencial", icon: AlertCircle, href: "/estudante/apoio" },
+  /* { label: "Apoio Emergencial", icon: AlertCircle, href: "/estudante/apoio" },
   { label: "Conquistas", icon: Trophy, href: "/estudante/conquistas" },
   { label: "Notificações", icon: Bell, href: "/estudante/notificacoes" },
-  { label: "Perfil", icon: User, href: "/estudante/perfil" },
+  { label: "Perfil", icon: User, href: "/estudante/perfil" }, */
 ];
 
 interface StudentLayoutProps {
