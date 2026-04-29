@@ -121,7 +121,7 @@ export function EstudanteDetailModal({
               {estudante.status === "PENDENTE" && (
                 <Button
                   size="sm"
-                  variant="primary"
+                  variant="default"
                   onClick={() => handleStatusChange("ACTIVO")}
                   disabled={saving}
                 >
